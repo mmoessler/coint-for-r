@@ -5,10 +5,14 @@ kernel <- function(uv, l, ker_fun = c("parzen"), check = FALSE) {
   
   # checks
   if (check == TRUE) {
+    
     uv <- e
     l <- v
     ker_fun <- ker_fun
+    
   }
+  
+  
   
   
   
@@ -16,7 +20,7 @@ kernel <- function(uv, l, ker_fun = c("parzen"), check = FALSE) {
     print("ERROR: data must have more than one observation to estimate autocorrelations")
   }
   if (ker_fun == "qs") {
-    ret <- -9999
+    ret <- qs(uv, l)
   } else if (ker_fun == "parzen") {
     ret <- parzen(uv, l)
   } else if (ker_fun == "fejer") {
@@ -37,9 +41,13 @@ parzen <- function(uv, k, check = FALSE) {
   
   # checks
   if (check == TRUE) {
+    
     uv <- uv
     k <- l
+    
   }
+  
+  
   
   
   
@@ -70,6 +78,49 @@ parzen <- function(uv, k, check = FALSE) {
   ret <- a/nrow(uv)
 
   parzen_weights <<- weights # store in global environment for checks
+  
+  return(ret)
+  
+}
+
+# quadratic 
+qs <- function(uv, k, check = FALSE) {
+  
+  # checks
+  if (check == TRUE) {
+    
+    uv <- uv
+    k <- l
+    
+  }
+  
+  
+  
+  
+  
+  if (k > nrow(uv)) {
+    k <- nrow(uv) - 1
+  }
+  if (k >= 1) {
+    weights <- zeros(k,1)
+  }
+  jb <- seq(1, rows(uv)-1, 1)/(k+1)
+  jband <- jb*1.2*pi
+  kn <- ((sin(jband)/jband - cos(jband))/(jband^2))*3
+  l <- 1
+  a <- 0
+  while(l <= rows(uv)-1) {
+    m <- kn[l]
+    t1 <- detrend(trimr(uv, l, 0), 0)
+    t2 <- detrend(trimr(lagn(uv, l), l, 0), 0)
+    a  <- a + m * (t(t1) %*% t2)
+    weights[l] <- m
+    l <- l + 1
+  }
+  
+  ret <- a/nrow(uv)
+  
+  qs_weights <<- weights # store in global environment for checks
   
   return(ret)
   
