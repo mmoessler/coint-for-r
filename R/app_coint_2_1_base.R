@@ -62,12 +62,15 @@ kacf <- function(e, v, aband = 1, ker_fun = c("parzen"), check = FALSE) {
   
   # checks
   if (check == TRUE) {
+    
     e <- e
     v <- v
     aband <- aband
     ker_fun <- ker_fun
     
   }
+  
+  
   
   
   
@@ -93,7 +96,7 @@ kacf <- function(e, v, aband = 1, ker_fun = c("parzen"), check = FALSE) {
     }
   } 
   
-  ret <- kernel(e, v, ker_fun = ker_fun)
+  ret <- kernel(uv = e, l = v, ker_fun = ker_fun)
   
   return(ret)
   
@@ -118,13 +121,13 @@ lrvar <- function(e, v, aband = 1, filter = 0, ker_fun = c("parzen"), check = FA
     a <- xahat$a
     new_e <- xahat$r
     tmp <- inv(eye(ncol(e)) - a)
-    io <- kacf(new_e, v, aband = aband, ker_fun = ker_fun)
+    io <- kacf(e = new_e, v = v, aband = aband, ker_fun = ker_fun)
     # MM added (for potentially io=0)
     io <- matrix(io, nrow = ncol(e), ncol = ncol(e))
     s  <- (t(new_e) %*% new_e)/nrow(new_e)
     lr <- t(tmp) %*% (s + io + t(io)) %*% tmp
   } else {
-    io <- kacf(e, v, aband = aband, ker_fun = ker_fun)
+    io <- kacf(e = e, v = v, aband = aband, ker_fun = ker_fun)
     # MM added (for potentially io=0)
     io <- matrix(io, nrow = ncol(e), ncol = ncol(e))
     s  <- (t(e) %*% e)/nrow(e)
@@ -138,20 +141,34 @@ lrvar <- function(e, v, aband = 1, filter = 0, ker_fun = c("parzen"), check = FA
 }
 
 # one-sided long-run variance matrix
-delta <- function(e, v, aband = 1, filter = 0) {
+delta <- function(e, v, aband = 1, filter = 0, ker_fun = c("parzen"), check = FALSE) {
+  
+  # checks
+  if (check == TRUE) {
+    
+    e <- e
+    v <- l
+    aband <- aband
+    filter <- filter
+
+  }
+  
+  
+  
+  
   
   if (filter == 1) {
     xahat <- xahat(e)
     a <- xahat$a
     new_e <- xahat$r
     tmp <- inv(eye(cols(e)) - a)
-    io <- kacf(new_e, v, aband = aband)
+    io <- kacf(e = new_e, v = v, aband = aband, ker_fun = ker_fun)
     s  <- (t(new_e) %*% new_e)/rows(new_e)
     su <- (t(e) %*% e)/(rows(e)) 
     # lr <- su + t(tmp) %*% io %*% tmp + (t(tmp) %*% (t(a)) %*% su)
     lr <- su + (t(tmp) * io) %*% tmp + (t(tmp) %*% (t(a)) %*% su)
   } else {
-    io <- kacf(e,v, aband = aband)
+    io <- kacf(e = e, v = v, aband = aband)
     lr <- ((t(e) %*% e)/rows(e)) + (io)
   }
   
