@@ -1,0 +1,67 @@
+
+proc (2) = fm_ols(y,x,d,l);
+    
+    /* Multivariate FM */
+    /* Returns Beta (k x n)
+    Variance matrix --- kn x kn */
+    /* Formulae from Phillips (1993) CFDP 1047 */
+    
+    local t, m, n, xd, z, ixx, xy, beta, u, e, del, sig, sigxx;
+    local true, ys, dels, xk, j, temp, var, bige, delxx;
+    
+    t     = rows(y) - 1;
+    m     = cols(x);
+    n     = cols(y);
+    
+    if ( _NoDet NE 1 ) ;
+        xd    = x-(d*inv(d'd)*(d'x));
+        z     = x~d;
+    else ;
+        xd    = x ;
+        z     = x ;
+    endif ;
+    
+    ixx   = inv(z'z);
+    xy    = z'y ;
+    beta  = y/z ;
+    
+    u     = y - (z*beta) ;
+    e     = trimr(u,1,0)~diff(xd,1) ;
+    
+    del   = delta(e,l);
+    del   = trimr(trimr(del',n,0)',0,m);
+    sig   = lrvar(e,l) ;
+    sigxx = trimr(trimr(sig,n,0)',n,0);
+    
+    delxx = delta(diff(xd,1),l);
+    
+    true  = del*inv(sigxx) ;
+    
+    ys    = trimr(y,1,0) - diff(xd,1)*(true');
+    dels  = del' - (delxx*(true')) ;
+    
+    if (_NoDet NE 1) ;
+        dels = dels|zeros(cols(d),n);
+    endif ;
+    
+    xk    = trimr(z,1,0);
+    ixx   = inv(xk'xk);
+    beta  = ixx*((xk'ys)-(rows(xk)*dels)); /* Mutivariate FM */
+    
+    /*   Okay, compute the co-variance matrix.... */
+    
+    temp  = trimr(u[.,1],1,0) .* xk ;
+    j = 1 ;
+    do while (j < cols(u));
+        j = j + 1 ;
+        temp = temp~(trimr(u[.,j],1,0) .* xk);
+    endo ;
+    
+    bige  = lrvar(temp,l);
+    temp  = eye(cols(u)) .*. (sqrt(rows(xk))*ixx);
+    
+    var   = temp * bige * temp;
+    
+    retp(beta,var) ;
+    
+endp ;
